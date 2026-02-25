@@ -6,8 +6,13 @@ const app = express();
 app.use(express.json());
 
 let items = [
-  { id: 1, name: "Trukki", stock: 5 },
-  { id: 2, name: "Kuormalava", stock: 50 },
+  { id: 1, name: "Trukki", type: "Laite", sizeM2: null, stock: 5 },
+  { id: 2, name: "Kuormalava", type: "Tarvike", sizeM2: null, stock: 50 },
+
+  // Esimerkkejä varastokopeista:
+  { id: 3, name: "Varastokoppi S", type: "Varastokoppi", sizeM2: 2, stock: 3 },
+  { id: 4, name: "Varastokoppi M", type: "Varastokoppi", sizeM2: 5, stock: 2 },
+  { id: 5, name: "Varastokoppi L", type: "Varastokoppi", sizeM2: 10, stock: 1 },
 ];
 
 let reservations = [];
