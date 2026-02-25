@@ -54,11 +54,40 @@ app.get("/", (req, res) => {
       }
 
       async function reserve(itemId) {
-        const res = await fetch('/reserve', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ itemId: itemId, qty: 1, customer: 'Selain Asiakas' })
-        });
+  const startEl = document.getElementById('startAt');
+  const endEl = document.getElementById('endAt');
+
+  const startAt = startEl.value;
+  const endAt = endEl.value;
+
+  if (!startAt || !endAt) {
+    alert("Valitse aloitus- ja loppuaika");
+    return;
+  }
+
+  const res = await fetch('/reserve', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      itemId: itemId,
+      qty: 1,
+      customer: 'Selain Asiakas',
+      startAt: startAt,
+      endAt: endAt
+    })
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    alert('Virhe: ' + (data.error || 'Tuntematon'));
+    return;
+  }
+
+  alert('Varaus tehty! Varaus ID: ' + data.id);
+  loadItems();
+  loadReservations();
+}
 
         const data = await res.json();
 
