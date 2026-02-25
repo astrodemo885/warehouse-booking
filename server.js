@@ -1,3 +1,57 @@
+app.get("/", (req, res) => {
+  res.send(`
+    <html>
+      <head>
+        <title>Warehouse Booking</title>
+      </head>
+      <body style="font-family: Arial; padding: 40px;">
+        <h1>Varaston varaus</h1>
+
+        <div id="items"></div>
+
+        <script>
+          async function loadItems() {
+            const res = await fetch('/items');
+            const items = await res.json();
+            
+            const container = document.getElementById('items');
+            container.innerHTML = "";
+
+            items.forEach(item => {
+              const div = document.createElement('div');
+              div.style.marginBottom = "20px";
+              div.innerHTML = \`
+                <b>\${item.name}</b><br/>
+                Varastossa: \${item.stock}<br/>
+                <button onclick="reserve(\${item.id})">Varaa 1 kpl</button>
+                <hr/>
+              \`;
+              container.appendChild(div);
+            });
+          }
+
+          async function reserve(itemId) {
+            const res = await fetch('/reserve', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                itemId: itemId,
+                qty: 1,
+                customer: "Selain Asiakas"
+              })
+            });
+
+            const data = await res.json();
+            alert("Varaus tehty! ID: " + data.id);
+            loadItems();
+          }
+
+          loadItems();
+        </script>
+      </body>
+    </html>
+  `);
+});
 "use strict";
 
 const express = require("express");
