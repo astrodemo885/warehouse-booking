@@ -1,7 +1,9 @@
-server.jsconst express = require("express");
+const express = require("express");
 
 const app = express();
 app.use(express.json());
+
+app.get("/", (req, res) => res.send("OK"));
 
 let items = [
   { id: 1, name: "Trukki", stock: 5 },
@@ -10,23 +12,16 @@ let items = [
 
 let reservations = [];
 
-// Hae kaikki tuotteet
 app.get("/items", (req, res) => {
   res.json(items);
 });
 
-// Tee varaus
 app.post("/reserve", (req, res) => {
   const { itemId, qty, customer } = req.body;
 
   const item = items.find(i => i.id === itemId);
-  if (!item) {
-    return res.status(404).json({ error: "Tuotetta ei löydy" });
-  }
-
-  if (item.stock < qty) {
-    return res.status(400).json({ error: "Ei tarpeeksi varastossa" });
-  }
+  if (!item) return res.status(404).json({ error: "Tuotetta ei löydy" });
+  if (item.stock < qty) return res.status(400).json({ error: "Ei tarpeeksi varastossa" });
 
   item.stock -= qty;
 
@@ -37,35 +32,3 @@ app.post("/reserve", (req, res) => {
     customer,
     status: "PENDING_PAYMENT"
   };
-
-  reservations.push(reservation);
-
-  res.json({
-    message: "Varaus luotu, siirry maksuun",
-    reservation
-  });
-});
-
-// Maksun simulointi
-app.post("/pay/:id", (req, res) => {
-  const reservation = reservations.find(r => r.id == req.params.id);
-
-  if (!reservation) {
-    return res.status(404).json({ error: "Varausta ei löydy" });
-  }
-
-  reservation.status = "PAID";
-
-  res.json({
-    message: "Maksu onnistui",
-    reservation
-  });
-});
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, "0.0.0.0", () => {
-  console.log("Server running on port " + PORT);
-});
-app.get("/", (req, res) => {
-  res.send("OK");
-});
