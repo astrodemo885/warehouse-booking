@@ -80,11 +80,75 @@ app.get("/", (req, res) => {
 });
 
 // API:t
-app.get("/items", (req, res) => {
+async function reserve(itemId) {
+  const startEl = document.getElementById('startAt');
+  const endEl = document.getElementById('endAt');
+
+  const startAt = startEl.value;
+  const endAt = endEl.value;
+
+  if (!startAt || !endAt) {
+    alert("Valitse aloitus- ja loppuaika");
+    return;
+  }
+
+  const res = await fetch('/reserve', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      itemId: itemId,
+      qty: 1,
+      customer: 'Selain Asiakas',
+      startAt: startAt,
+      endAt: endAt
+    })
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    alert('Virhe: ' + (data.error || 'Tuntematon'));
+    return;
+  }
+
+  alert('Varaus tehty! Varaus ID: ' + data.id);
+  loadItems();
+  loadReservations();
+}
   res.json(items);
 });
 
 app.post("/reserve", (req, res) => {
+  const { itemId, qty, customer, startAt, endAt } = req.body || {};
+
+  if (!itemId || !qty) return res.status(400).json({ error: "itemId ja qty vaaditaan" });
+  if (!startAt || !endAt) return res.status(400).json({ error: "startAt ja endAt vaaditaan" });
+
+  const item = items.find((i) => i.id === Number(itemId));
+  if (!item) return res.status(404).json({ error: "Tuotetta ei löydy" });
+  if (item.stock < Number(qty)) return res.status(400).json({ error: "Ei tarpeeksi varastossa" });
+
+  // Tarkista että endAt on startAt:n jälkeen
+  const s = new Date(startAt);
+  const e = new Date(endAt);
+  if (isNaN(s.getTime()) || isNaN(e.getTime())) return res.status(400).json({ error: "Virheellinen aika" });
+  if (e <= s) return res.status(400).json({ error: "Loppuaika pitää olla alkuaikaa myöhemmin" });
+
+  item.stock -= Number(qty);
+
+  const reservation = {
+    id: reservations.length + 1,
+    itemId: item.id,
+    qty: Number(qty),
+    customer: customer || "Tuntematon",
+    startAt: s.toISOString(),
+    endAt: e.toISOString(),
+    status: "PENDING_PAYMENT",
+  };
+
+  reservations.push(reservation);
+  res.json(reservation);
+});
   const { itemId, qty, customer } = req.body || {};
 
   if (!itemId || !qty) return res.status(400).json({ error: "itemId ja qty vaaditaan" });
