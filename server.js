@@ -5,7 +5,9 @@ const express = require("express");
 const app = express();
 app.use(express.json());
 
-app.get("/", (req, res) => res.send("OK"));
+app.get("/", (req, res) => {
+  res.send("OK");
+});
 
 app.get("/items", (req, res) => {
   res.json([
@@ -15,6 +17,7 @@ app.get("/items", (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, "0.0.0.0", () => {
-  console.log("Listening on " + PORT);
+  console.log("Server running on port " + PORT);
 });
