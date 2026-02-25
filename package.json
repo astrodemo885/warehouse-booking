@@ -1,7 +1,6 @@
 {
   "name": "warehouse-booking",
   "version": "1.0.0",
-  "description": "Yksinkertainen varaston varausjärjestelmä",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
