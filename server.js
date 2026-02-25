@@ -12,7 +12,7 @@ let items = [
 
 let reservations = [];
 
-// ✅ Testisivu (ei backtick-sisäkkäisyyksiä)
+// ✅ Testisivu (päivä + kellonaika)
 app.get("/", (req, res) => {
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.end(
@@ -27,20 +27,52 @@ app.get("/", (req, res) => {
       body { font-family: Arial, sans-serif; padding: 20px; }
       .card { border: 1px solid #ddd; border-radius: 12px; padding: 12px; margin: 10px 0; }
       button { padding: 10px 14px; }
+      input { padding: 10px; width: 100%; box-sizing: border-box; }
+      .row { display: grid; gap: 10px; }
+      @media (min-width: 600px) { .row { grid-template-columns: 1fr 1fr; } }
     </style>
   </head>
   <body>
     <h1>Varaston varaus</h1>
-    <p>Valitse tuote ja varaa 1 kpl.</p>
+    <p>Valitse tuote ja varaa 1 kpl ajalle.</p>
 
-    <div id="items">Ladataan...</div>
+    <div class="card">
+      <b>Varausaika</b><br/><br/>
+      <div class="row">
+        <div>
+          Aloitus:
+          <input id="startAt" type="datetime-local" />
+        </div>
+        <div>
+          Loppu:
+          <input id="endAt" type="datetime-local" />
+        </div>
+      </div>
+    </div>
+
+    <div id="items" class="card">Ladataan tuotteet...</div>
+
+    <h2>Varaukset</h2>
+    <div id="reservations" class="card">Ladataan varaukset...</div>
 
     <script>
+      function toLocalInputValue(d) {
+        const pad = (n) => String(n).padStart(2, '0');
+        return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) +
+          'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+      }
+
+      // Aseta oletusajat (nyt + 1h)
+      const now = new Date();
+      const plus1h = new Date(now.getTime() + 60*60*1000);
+      document.getElementById('startAt').value = toLocalInputValue(now);
+      document.getElementById('endAt').value = toLocalInputValue(plus1h);
+
       async function loadItems() {
         const res = await fetch('/items');
         const items = await res.json();
         const container = document.getElementById('items');
-        container.innerHTML = '';
+        container.innerHTML = '<b>Tuotteet</b><br/><br/>';
 
         items.forEach(item => {
           const div = document.createElement('div');
@@ -53,41 +85,49 @@ app.get("/", (req, res) => {
         });
       }
 
+      async function loadReservations() {
+        const res = await fetch('/reservations');
+        const reservations = await res.json();
+        const container = document.getElementById('reservations');
+
+        if (!reservations.length) {
+          container.innerHTML = '<i>Ei varauksia vielä</i>';
+          return;
+        }
+
+        container.innerHTML = '';
+        reservations.slice().reverse().forEach(r => {
+          const div = document.createElement('div');
+          div.className = 'card';
+          div.innerHTML =
+            '<b>Varaus #' + r.id + '</b><br/>' +
+            'Tuote ID: ' + r.itemId + '<br/>' +
+            'Aika: ' + new Date(r.startAt).toLocaleString() + ' – ' + new Date(r.endAt).toLocaleString() + '<br/>' +
+            'Tila: ' + r.status;
+          container.appendChild(div);
+        });
+      }
+
       async function reserve(itemId) {
-  const startEl = document.getElementById('startAt');
-  const endEl = document.getElementById('endAt');
+        const startAt = document.getElementById('startAt').value;
+        const endAt = document.getElementById('endAt').value;
 
-  const startAt = startEl.value;
-  const endAt = endEl.value;
+        if (!startAt || !endAt) {
+          alert('Valitse aloitus- ja loppuaika');
+          return;
+        }
 
-  if (!startAt || !endAt) {
-    alert("Valitse aloitus- ja loppuaika");
-    return;
-  }
-
-  const res = await fetch('/reserve', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      itemId: itemId,
-      qty: 1,
-      customer: 'Selain Asiakas',
-      startAt: startAt,
-      endAt: endAt
-    })
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    alert('Virhe: ' + (data.error || 'Tuntematon'));
-    return;
-  }
-
-  alert('Varaus tehty! Varaus ID: ' + data.id);
-  loadItems();
-  loadReservations();
-}
+        const res = await fetch('/reserve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            itemId: itemId,
+            qty: 1,
+            customer: 'Selain Asiakas',
+            startAt: startAt,
+            endAt: endAt
+          })
+        });
 
         const data = await res.json();
 
@@ -98,9 +138,11 @@ app.get("/", (req, res) => {
 
         alert('Varaus tehty! Varaus ID: ' + data.id);
         loadItems();
+        loadReservations();
       }
 
       loadItems();
+      loadReservations();
     </script>
   </body>
 </html>
@@ -109,41 +151,7 @@ app.get("/", (req, res) => {
 });
 
 // API:t
-async function reserve(itemId) {
-  const startEl = document.getElementById('startAt');
-  const endEl = document.getElementById('endAt');
-
-  const startAt = startEl.value;
-  const endAt = endEl.value;
-
-  if (!startAt || !endAt) {
-    alert("Valitse aloitus- ja loppuaika");
-    return;
-  }
-
-  const res = await fetch('/reserve', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      itemId: itemId,
-      qty: 1,
-      customer: 'Selain Asiakas',
-      startAt: startAt,
-      endAt: endAt
-    })
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    alert('Virhe: ' + (data.error || 'Tuntematon'));
-    return;
-  }
-
-  alert('Varaus tehty! Varaus ID: ' + data.id);
-  loadItems();
-  loadReservations();
-}
+app.get("/items", (req, res) => {
   res.json(items);
 });
 
@@ -157,7 +165,6 @@ app.post("/reserve", (req, res) => {
   if (!item) return res.status(404).json({ error: "Tuotetta ei löydy" });
   if (item.stock < Number(qty)) return res.status(400).json({ error: "Ei tarpeeksi varastossa" });
 
-  // Tarkista että endAt on startAt:n jälkeen
   const s = new Date(startAt);
   const e = new Date(endAt);
   if (isNaN(s.getTime()) || isNaN(e.getTime())) return res.status(400).json({ error: "Virheellinen aika" });
@@ -172,27 +179,6 @@ app.post("/reserve", (req, res) => {
     customer: customer || "Tuntematon",
     startAt: s.toISOString(),
     endAt: e.toISOString(),
-    status: "PENDING_PAYMENT",
-  };
-
-  reservations.push(reservation);
-  res.json(reservation);
-});
-  const { itemId, qty, customer } = req.body || {};
-
-  if (!itemId || !qty) return res.status(400).json({ error: "itemId ja qty vaaditaan" });
-
-  const item = items.find((i) => i.id === Number(itemId));
-  if (!item) return res.status(404).json({ error: "Tuotetta ei löydy" });
-  if (item.stock < Number(qty)) return res.status(400).json({ error: "Ei tarpeeksi varastossa" });
-
-  item.stock -= Number(qty);
-
-  const reservation = {
-    id: reservations.length + 1,
-    itemId: item.id,
-    qty: Number(qty),
-    customer: customer || "Tuntematon",
     status: "PENDING_PAYMENT",
   };
 
