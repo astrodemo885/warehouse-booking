@@ -123,22 +123,38 @@ app.post("/items", (req, res) => {
 });
 
 app.post("/reserve", (req, res) => {
-  const { itemId, qty, startAt, endAt } = req.body;
+  const { itemId, startAt, endAt } = req.body;
+
+  if (!itemId || !startAt || !endAt)
+    return res.status(400).json({ error: "itemId, startAt ja endAt vaaditaan" });
+
   const item = items.find(i => i.id === Number(itemId));
-  if (!item) return res.status(404).json({ error:"Ei löydy" });
-  if (item.stock < qty) return res.status(400).json({ error:"Ei tarpeeksi varastossa" });
+  if (!item) return res.status(404).json({ error: "Kohdetta ei löydy" });
 
-  item.stock -= qty;
+  const start = new Date(startAt);
+  const end = new Date(endAt);
 
-  reservations.push({
-    id: reservations.length+1,
-    itemId,
-    qty,
+  if (end <= start)
+    return res.status(400).json({ error: "Loppuaika pitää olla alkuaikaa myöhemmin" });
+
+  // 🔥 Tarkista päällekkäisyys
+  const overlap = reservations.find(r =>
+    r.itemId === Number(itemId) &&
+    !(new Date(r.endAt) <= start || new Date(r.startAt) >= end)
+  );
+
+  if (overlap)
+    return res.status(400).json({ error: "Koppi on jo varattu tälle ajalle" });
+
+  const reservation = {
+    id: reservations.length + 1,
+    itemId: Number(itemId),
     startAt,
-    endAt
-  });
+    endAt,
+  };
 
-  res.json({ success:true });
+  reservations.push(reservation);
+  res.json(reservation);
 });
 
 app.get("/reservations", (req, res) => res.json(reservations));
