@@ -129,14 +129,39 @@ app.post("/reserve", (req, res) => {
     return res.status(400).json({ error: "itemId, startAt ja endAt vaaditaan" });
 
   const item = items.find(i => i.id === Number(itemId));
-  if (!item) return res.status(404).json({ error: "Kohdetta ei löydy" });
+  if (!item)
+    return res.status(404).json({ error: "Kohdetta ei löydy" });
 
-  const start = new Date(startAt);
-  const end = new Date(endAt);
+  const newStart = new Date(startAt);
+  const newEnd = new Date(endAt);
 
-  if (end <= start)
+  if (newEnd <= newStart)
     return res.status(400).json({ error: "Loppuaika pitää olla alkuaikaa myöhemmin" });
 
+  // 🔥 TÄSSÄ KOHDASSA on se tärkeä ehto
+  const overlap = reservations.find(r => {
+    if (r.itemId !== Number(itemId)) return false;
+
+    const existingStart = new Date(r.startAt);
+    const existingEnd = new Date(r.endAt);
+
+    return !(existingEnd <= newStart || existingStart >= newEnd);
+  });
+
+  if (overlap)
+    return res.status(400).json({ error: "Koppi on jo varattu tälle ajalle" });
+
+  const reservation = {
+    id: reservations.length + 1,
+    itemId: Number(itemId),
+    startAt,
+    endAt,
+  };
+
+  reservations.push(reservation);
+
+  res.json(reservation);
+});
   // 🔥 Tarkista päällekkäisyys
   const overlap = reservations.find(r =>
     r.itemId === Number(itemId) &&
