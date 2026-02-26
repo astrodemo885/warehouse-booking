@@ -154,7 +154,22 @@ app.get("/", (req, res) => {
 `.trim()
   );
 });
+<div class="card">
+  <b>Lisää uusi tuote</b><br/><br/>
+  Nimi:
+  <input id="newName" placeholder="Esim. Varastokoppi XL" /><br/><br/>
 
+  Tyyppi:
+  <input id="newType" placeholder="Esim. Varastokoppi / Laite / Tarvike" /><br/><br/>
+
+  Koko (m²) (valinnainen):
+  <input id="newSize" type="number" step="0.5" placeholder="Esim. 15" /><br/><br/>
+
+  Määrä varastossa:
+  <input id="newStock" type="number" step="1" value="1" /><br/><br/>
+
+  <button onclick="addItem()">Lisää</button>
+</div>
 // API:t
 app.get("/items", (req, res) => {
   res.json(items);
