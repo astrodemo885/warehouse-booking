@@ -159,7 +159,27 @@ app.get("/", (req, res) => {
 app.get("/items", (req, res) => {
   res.json(items);
 });
+app.post("/items", (req, res) => {
+  const { name, type, sizeM2, stock } = req.body || {};
 
+  if (!name || !type) return res.status(400).json({ error: "name ja type vaaditaan" });
+
+  const newItem = {
+    id: items.length ? Math.max(...items.map(i => i.id)) + 1 : 1,
+    name: String(name),
+    type: String(type),
+    sizeM2: sizeM2 === null || sizeM2 === undefined || sizeM2 === "" ? null : Number(sizeM2),
+    stock: stock === undefined || stock === "" ? 1 : Number(stock),
+  };
+
+  if (Number.isNaN(newItem.stock) || newItem.stock < 0) return res.status(400).json({ error: "stock virheellinen" });
+  if (newItem.sizeM2 !== null && (Number.isNaN(newItem.sizeM2) || newItem.sizeM2 < 0)) {
+    return res.status(400).json({ error: "sizeM2 virheellinen" });
+  }
+
+  items.push(newItem);
+  res.json(newItem);
+});
 app.post("/reserve", (req, res) => {
   const { itemId, qty, customer, startAt, endAt } = req.body || {};
 
