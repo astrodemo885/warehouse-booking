@@ -41,24 +41,7 @@ app.get("/", (req, res) => {
     <h1>Varaston varaus</h1>
     <p>Valitse tuote ja varaa 1 kpl ajalle.</p>
 
-    <div class="card">
-      <b>Varausaika</b><br/><br/>
-      <div class="row">
-        <div>
-          Aloitus:
-          <input id="startAt" type="datetime-local" />
-        </div>
-        <div>
-          Loppu:
-          <input id="endAt" type="datetime-local" />
-        </div>
-      </div>
-    </div>
-
-    <div id="items" class="card">Ladataan tuotteet...</div>
-
-    <h2>Varaukset</h2>
-    <div id="reservations" class="card">Ladataan varaukset...</div>
+    varaukset...</div>
 
     <script>
       function toLocalInputValue(d) {
